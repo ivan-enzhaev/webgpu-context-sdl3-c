@@ -1,4 +1,4 @@
-set(CMAKE_BUILD_TYPE "Debug")
+set(CMAKE_BUILD_TYPE "Release")
 
 cmake_minimum_required(VERSION 3.21)
 project(webgpu-context-sdl3-c C)
@@ -102,13 +102,14 @@ elseif(WIN32)
         wgpu_native
     )
 
-    target_compile_options(app PRIVATE -Os)
-    target_link_options(app PRIVATE -static -s -static-libgcc)
+    # Dead-code elimination for GCC/MinGW
+    target_compile_options(app PRIVATE -ffunction-sections -fdata-sections)
 
-    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-        target_link_options(app PRIVATE -mconsole)
+    # Linker flags: static linking, stripping, subsystem, and section garbage collection
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        target_link_options(app PRIVATE -static -s -static-libgcc -Wl,--gc-sections -mconsole)
     else()
-        target_link_options(app PRIVATE -mwindows)
+        target_link_options(app PRIVATE -static -s -static-libgcc -Wl,--gc-sections -mwindows)
     endif()
 
 else() # Ubuntu
@@ -134,4 +135,10 @@ else() # Ubuntu
         SDL3_Static
         wgpu_native
     )
+
+    # Enable section separation for dead-code elimination
+    target_compile_options(app PRIVATE -ffunction-sections -fdata-sections)
+
+    # Clean combined linker flags
+    target_link_options(app PRIVATE -s -static-libgcc -Wl,--gc-sections)
 endif()
